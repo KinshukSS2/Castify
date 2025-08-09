@@ -1,28 +1,33 @@
 import mongoose, { mongo } from "mongoose";
 import { DB_NAME } from "./constants.js";
 import dotenv  from "dotenv";
+import { app } from "./app.js";
+dotenv.config(
+  //  path: '../.env' 
+);
 
-dotenv.config()
 
-import express from 'express';
+// import express from 'express';
 
-const app=express();
+// const app=express();
 
 (async ()=>{
   try{
-    mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`)
+      await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
+    console.log("✅ MongoDB connected successfully");
+
     app.on("error",(error)=>{
       console.log("ERR:",error);
-      throw err
+      throw error
 
     })
     app.listen(process.env.PORT,()=>{
-      console.log(`app is listening on port  ${process.env.PORT}`)
+      console.log(`🚀 App is listening on port:${process.env.PORT}`)
 
     })
   }
   catch(err){
     console.error("error is :",err);
-    throw err
+    process.exit(1)
   }
 })()
