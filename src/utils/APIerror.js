@@ -3,7 +3,7 @@ constructor(
     statusCode,
     message="something  went wrong",
     stack="",
-    error=[]
+    errors=[]
   )
 
   {
