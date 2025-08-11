@@ -5,6 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { APIresponse } from "../utils/APIresponse.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import jwt from "jsonwebtoken";
+import { response } from "express";
 // import { urlencoded } from "express";
 
 const generateAccessTokenAndRefreshTokens=async(userId)=>{
@@ -131,8 +132,6 @@ return res
 )
 })
 
-
-
 const logoutUser=asyncHandler(async(req,res)=>{
  await  User.findByIdAndUpdate(
   req.user._id,{
@@ -154,7 +153,6 @@ return res
 .clearCookie("refreshToken",options)
 .json(new APIresponse(200,{},"user logged out"))
 })
-
 
 const refreshAccessToken=asyncHandler(async(req,res)=>{
    const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken
@@ -198,14 +196,117 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
    } catch (error) {
     throw new APIerror(401,error?.message || "invalid refresh token")
     
-   }
+  }
 })
 
+const changePassword=asyncHandler(async(req,res)=>{
+
+  const{oldpassword,newpassword,confpassword}=req.body
+  if(!(newpassowrd === confpassword)){
+    throw new APIerror(401,"incorrect entry in confirmation or new password ")
+  }
+
+  const user =await  User.findById(req.User?._id)
+  const isPasswordCorrect=await user.isPasswordCorrect(oldpassword)
+  if(!isPasswordCorrect){
+    throw new  APIerror(401,"invalid present password")
+
+  }
+  user.password=newpassword
+
+})
+
+const getCurrentUser=asyncHandler(async(req,res)=>{
+  return res
+  .status(200)
+  .json(200,req.user,"current user fetched successfully")
+})
+
+const updateAccountDetails=asyncHandler(async(req,res)=>{
+  const {fullname,email}=req.body
+  await findByIdAndUpdate(req.User?._id,
+    {
+      $set:{
+        fullname,
+        email:email
+      }
+    },
+    {new:true}
+  ).select("-password")
+  
+  return res
+  .status(200)
+  .json(new APIerror(200,user,"Account details updated successfully"))
+
+})
+
+const updateUserAvatar=asyncHandler(async(req,res)=>{
+  const avatarLocalPath=req.file?.path
+  if(!avatarLocalPath){
+    throw new APIerror(401,"avatar path not found")
+  }
+
+  const avatar=await uploadOnCloudinary(avatarLocalPath)
+
+  if(!avatar.url)
+{
+  throw new APIerror(401,"avatar uploading error")
+}
+const user=await  findByIdAndUpdate(req.User?._id,
+  {
+    $set:{
+      avatar:avatar.url
+    }
+  }
+ ).select("-password")
+
+
+ return res
+ .status(200)
+ .json(new APIerror(200,user,"Account avatar has been updated"))
+
+
+})
+
+
+const updateUserCoverImage=asyncHandler(async(req,res)=>{
+  const coverImageLocalPath=req.file?.path
+  if(!coverImageLocalPath){
+    throw new APIerror(401,"cover page path not found")
+  }
+
+  const coverImage=await uploadOnCloudinary(coverImageLocalPath)
+
+  if(!coverImage.url)
+{
+  throw new APIerror(401,"coverImage uploading error")
+}
+const user=await  findByIdAndUpdate(req.User?._id,
+  {
+    $set:{
+      coverimage:coverImage.url
+    }
+  }
+ ).select("-password")
+
+
+ return res
+ .status(200)
+ .json(new APIerror(200,user,"Account coverImage has been updated"))
+
+
+})
 
 
 export {
   registeruser,
   loginUser,
   logoutUser,
-  refreshAccessToken
+  refreshAccessToken,
+  changePassword,
+  getCurrentUser,
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCoverImage
+
 }
