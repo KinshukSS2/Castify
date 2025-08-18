@@ -202,18 +202,23 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
 const changePassword=asyncHandler(async(req,res)=>{
 
   const{oldpassword,newpassword,confpassword}=req.body
-  if(!(newpassowrd === confpassword)){
+  if(!(newpassword === confpassword)){
     throw new APIerror(401,"incorrect entry in confirmation or new password ")
   }
 
-  const user =await  User.findById(req.User?._id)
+  const user =await  User.findById(req.user?._id)
+
   const isPasswordCorrect=await user.isPasswordCorrect(oldpassword)
   if(!isPasswordCorrect){
-    throw new  APIerror(401,"invalid present password")
-
+    throw new APIerror(401,"invalid present password")
   }
-  user.password=newpassword
 
+  user.password=newpassword
+  await user.save();
+
+   return res
+   .status(200)
+   .json({ success: true, message: "Password updated successfully" });
 })
 
 const getCurrentUser=asyncHandler(async(req,res)=>{
@@ -222,28 +227,37 @@ const getCurrentUser=asyncHandler(async(req,res)=>{
   .json(200,req.user,"current user fetched successfully")
 })
 
-const updateAccountDetails=asyncHandler(async(req,res)=>{
-  const {fullname,email}=req.body
-  await findByIdAndUpdate(req.User?._id,
-    {
-      $set:{
-        fullname,
-        email:email
-      }
-    },
-    {new:true}
-  ).select("-password")
-  
-  return res
-  .status(200)
-  .json(new APIerror(200,user,"Account details updated successfully"))
 
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullname, email } = req.body;
+
+
+  const updateFields = {};
+  if (fullname) updateFields.fullname = fullname;
+  if (email) updateFields.email = email;
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    { $set: updateFields },
+    { new: true }
+  ).select("-password");
+
+  if (!user) {
+    throw new APIerror(404, "User not found");
+  }
+
+  return res.status(200).json({
+    success: true,
+    user,
+    message: "Account details updated successfully"
+  });
 })
+
 
 const updateUserAvatar=asyncHandler(async(req,res)=>{
   const avatarLocalPath=req.file?.path
   if(!avatarLocalPath){
-    throw new APIerror(401,"avatar path not found")
+    throw new APIerror(400,"avatar path not found")
   }
 
   const avatar=await uploadOnCloudinary(avatarLocalPath)
@@ -252,27 +266,29 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
 {
   throw new APIerror(401,"avatar uploading error")
 }
-const user=await  findByIdAndUpdate(req.User?._id,
+const user=await  User.findByIdAndUpdate(
+  req.user?._id,
+
   {
     $set:{
       avatar:avatar.url
     }
-  }
+  },
+  { new: true }
  ).select("-password")
 
 
  return res
  .status(200)
- .json(new APIerror(200,user,"Account avatar has been updated"))
+ .json(new APIresponse(200,user,"Account avatar has been updated"))
 
 
 })
 
-
 const updateUserCoverImage=asyncHandler(async(req,res)=>{
   const coverImageLocalPath=req.file?.path
   if(!coverImageLocalPath){
-    throw new APIerror(401,"cover page path not found")
+    throw new APIerror(400,"cover page path not found")
   }
 
   const coverImage=await uploadOnCloudinary(coverImageLocalPath)
@@ -281,22 +297,22 @@ const updateUserCoverImage=asyncHandler(async(req,res)=>{
 {
   throw new APIerror(401,"coverImage uploading error")
 }
-const user=await  findByIdAndUpdate(req.User?._id,
+const user=await  User.findByIdAndUpdate(
+    req.user?._id,
   {
     $set:{
       coverimage:coverImage.url
-    }
-  }
+    },
+  },
+  {new:true}
  ).select("-password")
 
 
  return res
  .status(200)
- .json(new APIerror(200,user,"Account coverImage has been updated"))
-
+ .json(new APIresponse(200,user,"Account coverImage has been updated"))
 
 })
-
 
 const getChannelUserProfile=asyncHandler(async(req,res)=>{
   const {username}=req.params
@@ -439,6 +455,4 @@ export {
   updateUserCoverImage,
   getChannelUserProfile,
   getWatchHistory
-  
-
 }
