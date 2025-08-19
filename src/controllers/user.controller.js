@@ -86,9 +86,7 @@ if(!createdUser){
 
 const loginUser=asyncHandler(async (req,res)=>{
   
-  // console.log("BODY:", req.body);
-  const{email,username,password}=req.body 
-
+  const{email,username,password}=req.body
   if(!(username || email)){
     throw new APIerror(400,"username or email is required")
   }
@@ -163,7 +161,7 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
    try {
     const decodedToken=jwt.verify(
      incomingRefreshToken,
-     process.env.REFRES_TOKEN_SECRET
+     process.env.REFRESH_TOKEN_SECRET
     )
  
     const user=await User.findById(decodedToken?._id)
