@@ -5,7 +5,6 @@ const videoSchema=new mongoose.Schema({
     type:String,
     required:true
   },
-
   description:{
     type:String,
     required:true
@@ -33,13 +32,12 @@ const videoSchema=new mongoose.Schema({
   owner:{
     type:Schema.Types.ObjectId,
     ref:"User"
-
   }
 
 
 
 },{timestamps:true})
 
-
+videoSchema.plugin(mongooseAggregatePaginate)
 
 export const Video=mongoose.model("Video",videoSchema)
