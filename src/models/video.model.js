@@ -1,7 +1,8 @@
 import mongoose, { Schema } from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2"
 
 const videoSchema=new mongoose.Schema({
-  videofile:{
+  videoFile:{
     type:String,
     required:true
   },
@@ -33,8 +34,23 @@ const videoSchema=new mongoose.Schema({
     type:Schema.Types.ObjectId,
     ref:"User"
   }
-
-
+  ,
+  story:{
+    type:Schema.Types.ObjectId,
+    ref:'Story'
+  },
+  parentVideo:{
+    type:Schema.Types.ObjectId,
+    ref:'Video'
+  },
+  views:{
+    type:Number,
+    default:0
+  },
+  isPublished: {
+     type: Boolean, 
+     default: true
+   },
 
 },{timestamps:true})
 

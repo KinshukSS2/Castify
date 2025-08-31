@@ -41,6 +41,12 @@ const userSchema=new mongoose.Schema({
     type:String,
     required:true
   },
+
+  //  newsletterSubscribed: {
+  //   type: Boolean,
+  //   default: false,
+  // },
+
   watchHistory:[
     {
       type:Schema.Types.ObjectId,

@@ -30,7 +30,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
         router.route("/cover-image").patch(verifyJWT,upload.single("coverimage"),updateUserCoverImage)
         router.route("/c/:username").get(verifyJWT,getChannelUserProfile)
         router.route("/get-watch-history").get(verifyJWT,getWatchHistory)
-
+       
 
 
   export default router;
