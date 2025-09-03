@@ -49,7 +49,7 @@ const videoSchema=new mongoose.Schema({
     ref:'Video',
     default:null
   },
-    branches:
+  branches:
     [{ type: Schema.Types.ObjectId,
        ref: "Video"
     }],
@@ -59,9 +59,22 @@ const videoSchema=new mongoose.Schema({
      default: 0
     },
 
+  voters: [
+  {
+    user: { type: Schema.Types.ObjectId, ref: "User" },
+    value: { type: Number, enum: [1, -1] }                          // 1 = upvote, -1 = downvote  just like reddit
+  }
+  ],
+
   isUserUpload: {
      type: Boolean,
-     default: true }
+     default: true },
+
+
+   sourceAPI: {
+      type: String,
+      default: null,
+    },
 
 },{timestamps:true})
 

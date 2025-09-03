@@ -25,9 +25,8 @@
 
   import videoRouter from './routes/video.routes.js';
   app.use("/api/v1/videos", videoRouter);
-
-
-
   
+  import storyRouter from './routes/story.routes.js';
+  app.use("/api/v1/stories", storyRouter);
 
   export{app}

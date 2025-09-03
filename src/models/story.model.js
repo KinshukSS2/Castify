@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose,{Schema} from "mongoose";
 
 const storySchema = new mongoose.Schema({
   title: {
@@ -28,6 +28,6 @@ const storySchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export default Story = mongoose.model("Story", storySchema);
+export const Story = mongoose.model("Story", storySchema);
 
 
