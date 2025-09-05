@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 import { Story } from "../models/story.model.js";
 import { APIresponse } from "../utils/APIresponse.js";
+import mongoose from "mongoose";
 
 const createStory = asyncHandler(async (req, res) => {
   const { title, description, rootVideoId } = req.body;
@@ -37,8 +38,8 @@ const getStory = asyncHandler(async (req, res) => {
   const { storyId } = req.params;
   const story = await Story.findById(storyId).populate({
     path: "rootVideo",
-    select: "title description",
-    populate: { path: "branches", select: "title thumbnail" },
+    select: "title description videoFile thumbnail duration votes",
+    populate: { path: "branches", select: "title thumbnail videoFile" },
   });
 
   if (!story) {
@@ -51,33 +52,120 @@ const getStory = asyncHandler(async (req, res) => {
 });
 
 
+// const addBranchToVideo = asyncHandler(async (req, res) => {
+//   const { videoId } = req.params;
+//   const { branchVideoId } = req.body;
+
+//   console.log("Body:", req.body);
+
+
+//   if (!branchVideoId) {
+//     throw new APIerror(400, "branchVideoId is required");
+//   }
+
+//   const video = await Video.findById(videoId);
+//   if (!video) {
+//     throw new APIerror(404, "video not found");
+//   }
+
+//   const branchVideo = await Video.findById(branchVideoId);
+//   if (!branchVideo) {
+//     throw new APIerror(404, "branch video not found");
+//   }
+
+//   video.branches.push(branchVideoId);
+//   await video.save();
+
+//   return res.status(200).json(
+//     new APIresponse(200, { video }, "branch video added successfully")
+//   );
+// });
 const addBranchToVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { branchVideoId } = req.body;
 
+  console.log("=== ADD BRANCH REQUEST ===");
   console.log("Body:", req.body);
-
+  console.log("VideoId from params:", videoId);
 
   if (!branchVideoId) {
     throw new APIerror(400, "branchVideoId is required");
   }
 
-  const video = await Video.findById(videoId);
-  if (!video) {
-    throw new APIerror(404, "video not found");
+  // Validate ObjectId format
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new APIerror(400, "Invalid parent video ID format");
+  }
+  if (!mongoose.Types.ObjectId.isValid(branchVideoId)) {
+    throw new APIerror(400, "Invalid branch video ID format");
   }
 
-  const branchVideo = await Video.findById(branchVideoId);
-  if (!branchVideo) {
-    throw new APIerror(404, "branch video not found");
+  try {
+    // 1. Validate parent video
+    console.log("Searching for parent video...");
+    const parentVideo = await Video.findById(videoId);
+    if (!parentVideo) {
+      console.log("Parent video not found for ID:", videoId);
+      throw new APIerror(404, "Parent video not found");
+    }
+
+    console.log("Parent video found:", {
+      id: parentVideo._id.toString(),
+      title: parentVideo.title,
+      branches: parentVideo.branches || [],
+      branchesLength: (parentVideo.branches || []).length
+    });
+
+    // 2. Validate branch video exists
+    console.log("Searching for branch video...");
+    const branchVideo = await Video.findById(branchVideoId);
+    if (!branchVideo) {
+      console.log("Branch video not found for ID:", branchVideoId);
+      throw new APIerror(404, "Branch video not found");
+    }
+
+    console.log("Branch video found:", {
+      id: branchVideo._id.toString(),
+      title: branchVideo.title
+    });
+
+    // 3. Initialize branches array if it doesn't exist
+    if (!parentVideo.branches) {
+      console.log("Initializing branches array");
+      parentVideo.branches = [];
+    }
+
+    // 4. Check if branch is already added
+    const branchExists = parentVideo.branches.some(branch => branch.toString() === branchVideoId);
+    if (branchExists) {
+      throw new APIerror(400, "This video is already a branch of the parent video");
+    }
+
+    // 5. Add branch reference to parent and set parent reference in branch
+    console.log("Adding branch to parent...");
+    parentVideo.branches.push(branchVideoId);
+    branchVideo.parentVideo = videoId;
+    
+    console.log("Saving parent video with branches:", parentVideo.branches.map(b => b.toString()));
+    await parentVideo.save();
+    
+    console.log("Saving branch video with parent:", branchVideo.parentVideo);
+    await branchVideo.save();
+
+    console.log("=== BRANCH ADDED SUCCESSFULLY ===");
+    return res.status(200).json(
+      new APIresponse(
+        200,
+        { parentVideo, branchVideo },
+        "Branch video linked successfully"
+      )
+    );
+  } catch (error) {
+    console.error("=== ERROR IN ADD BRANCH ===");
+    console.error("Error details:", error);
+    console.error("Error stack:", error.stack);
+    throw error;
   }
-
-  video.branches.push(branchVideoId);
-  await video.save();
-
-  return res.status(200).json(
-    new APIresponse(200, { video }, "branch video added successfully")
-  );
 });
 
 
@@ -150,13 +238,13 @@ const getFullStoryTree = asyncHandler(async (req, res) => {
 
   const fetchVideoWithBranches = async (videoId) => {
     const video = await Video.findById(videoId)
-      .select("title thumbnail description votes branches")
+      .select("title thumbnail description votes branches videoFile views")
       .lean();
 
     if (!video) return null;
 
     video.branches = await Promise.all(
-      video.branches.map((branchId) => fetchVideoWithBranches(branchId))
+      (video.branches || []).map((branchId) => fetchVideoWithBranches(branchId))
     );
 
     return video;
