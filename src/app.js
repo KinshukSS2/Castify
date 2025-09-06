@@ -29,4 +29,7 @@
   import storyRouter from './routes/story.routes.js';
   app.use("/api/v1/stories", storyRouter);
 
+  import orderRouter from './routes/order.routes.js';
+  app.use("/api/v1/orders", orderRouter);
+
   export{app}

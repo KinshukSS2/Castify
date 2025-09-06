@@ -47,6 +47,18 @@ const userSchema=new mongoose.Schema({
   //   default: false,
   // },
 
+  phone:{
+    type:String
+  },
+  address:{
+    street:{type:String},
+    city: { type: String },
+    state: { type: String },
+    pincode: { type: String },
+    country: { type: String, default: "India" },
+
+  },
+
   watchHistory:[
     {
       type:Schema.Types.ObjectId,
