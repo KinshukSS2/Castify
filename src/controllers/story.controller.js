@@ -52,34 +52,7 @@ const getStory = asyncHandler(async (req, res) => {
 });
 
 
-// const addBranchToVideo = asyncHandler(async (req, res) => {
-//   const { videoId } = req.params;
-//   const { branchVideoId } = req.body;
 
-//   console.log("Body:", req.body);
-
-
-//   if (!branchVideoId) {
-//     throw new APIerror(400, "branchVideoId is required");
-//   }
-
-//   const video = await Video.findById(videoId);
-//   if (!video) {
-//     throw new APIerror(404, "video not found");
-//   }
-
-//   const branchVideo = await Video.findById(branchVideoId);
-//   if (!branchVideo) {
-//     throw new APIerror(404, "branch video not found");
-//   }
-
-//   video.branches.push(branchVideoId);
-//   await video.save();
-
-//   return res.status(200).json(
-//     new APIresponse(200, { video }, "branch video added successfully")
-//   );
-// });
 const addBranchToVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { branchVideoId } = req.body;

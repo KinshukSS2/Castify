@@ -1,6 +1,5 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import {Video} from "../models/video.model.js"
-import {User} from "../models/user.model.js"
 import { APIerror } from "../utils/APIerror.js"
 import { APIresponse } from "../utils/APIresponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -53,21 +52,32 @@ const publishVideo = asyncHandler(async (req, res) => {
     .json(new APIresponse(201, newVideo, "Video has been uploaded successfully"));
 });
 
+const getvideoById = asyncHandler(async(req,res)=>{
+
+  const video=await Video.findById(req.params.id)
+  if(!video){
+    throw new APIerror(400,"video not found")
+  }
+
+  return res
+  .status(200)
+  .json(new APIresponse(200,video,"got video by id"))
+});
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  console.log("🎬 getAllVideos API called");
-  console.log("📝 Query params:", req.query);
+  console.log(" getAllVideos API called");
+  console.log(" Query params:", req.query);
   
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
 
-  console.log(`📊 Fetching videos - Page: ${page}, Limit: ${limit}`);
+  console.log(` Fetching videos - Page: ${page}, Limit: ${limit}`);
 
   const videos = await Video.find()
     .skip((page - 1) * limit)
     .limit(limit);
 
-  console.log(`📹 Found ${videos.length} videos in database`);
+  console.log(` Found ${videos.length} videos in database`);
   console.log("🔍 Sample video data:", videos[0] ? {
     id: videos[0]._id,
     title: videos[0].title,
@@ -108,26 +118,16 @@ const getAllVideos = asyncHandler(async (req, res) => {
   res.status(200).json(response);
 });
 
-
-const getvideoById = asyncHandler(async(req,res)=>{
-
-  const video=await Video.findById(req.params.id)
-  if(!video){
-    throw new APIerror(400,"video not found")
-  }
-
-  return res
-  .status(200)
-  .json(new APIresponse(200,video,"got video by id"))
-});
-
 const getMyVideos = asyncHandler(async (req, res) => {
-  // For demo/public app - return all videos since there's no authentication
-  const allVideos = await Video.find();
+  // Get videos uploaded by the current authenticated user
+  const myVideos = await Video.find({ owner: req.user._id })
+    .sort({ createdAt: -1 })  // Latest first
+    .populate('owner', 'username avatar')
+    .select('title description thumbnail videoFile duration createdAt views votes');
 
   return res
     .status(200)
-    .json(new APIresponse(200, { videos: allVideos }, "Fetched all videos"));
+    .json(new APIresponse(200, { videos: myVideos }, "Fetched user's videos successfully"));
 });
 
 // Alternative endpoint for URL-based video publishing (for populator)

@@ -3,10 +3,9 @@ import { APIerror } from "../utils/APIerror.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { APIresponse } from "../utils/APIresponse.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
 import jwt from "jsonwebtoken";
-import { response } from "express";
-// import { urlencoded } from "express";
+
+
 
 const generateAccessTokenAndRefreshTokens=async(userId)=>{
   try {
@@ -70,9 +69,9 @@ const user= await User.create({
   username:username?.toLowerCase()
 })
 
-const createdUser=await User.findById(user._id).select(
-  "-password -refreshtoken"
-)
+  const createdUser=await User.findById(user._id).select(
+    "-password -refreshtoken"
+  )
 
 if(!createdUser){
   throw new APIerror(500,"something went wrong while registering the user")
@@ -108,7 +107,7 @@ const loginUser=asyncHandler(async (req,res)=>{
 
 // cookies
 const loggedInUser=await User.findById(user._id).
-select("--refreshToken --password")
+select("-refreshtoken -password")
 
 const options={
   httpOnly:true,
@@ -131,26 +130,39 @@ return res
 })
 
 const logoutUser=asyncHandler(async(req,res)=>{
- await  User.findByIdAndUpdate(
-  req.user._id,{
-    $set:{
-      refreshToken:undefined
+  try {
+    // Check if user exists in request (from auth middleware)
+    if (!req.user || !req.user._id) {
+      throw new APIerror(401, "User not authenticated");
     }
-  },{
-    new:true
-  }
-)
 
-const options={
-  httpOnly:true,
-  secure:true
-}
-return res
-.status(200)
-.clearCookie("accessToken",options)
-.clearCookie("refreshToken",options)
-.json(new APIresponse(200,{},"user logged out"))
-})
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $unset: {
+          refreshtoken: 1 // This removes the field from document
+        }
+      },
+      {
+        new: true
+      }
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true
+    };
+
+    return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json(new APIresponse(200, {}, "User logged out successfully"));
+
+  } catch (error) {
+    throw new APIerror(500, error?.message || "Error during logout");
+  }
+});
 
 const refreshAccessToken=asyncHandler(async(req,res)=>{
    const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken
@@ -170,7 +182,7 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
      throw new APIerror(401,"invalid refresh token")
     }
  
-    if(incomingRefreshToken !== user?.refreshToken){
+    if(incomingRefreshToken !== user?.refreshtoken){
      throw new APIerror(401,"refreh token in expired or invalid")
     }
  
@@ -313,134 +325,134 @@ const user=await  User.findByIdAndUpdate(
 
 })
 
-const getChannelUserProfile=asyncHandler(async(req,res)=>{
-  const {username}=req.params
-  if(!username?.trim()){
-    throw new APIerror(400,"username is missing")
-  }
+// const getChannelUserProfile=asyncHandler(async(req,res)=>{
+//   const {username}=req.params
+//   if(!username?.trim()){
+//     throw new APIerror(400,"username is missing")
+//   }
 
-  const channel=await  User.aggregate([
-    {
-      $match:{
-        username:username?.toLowerCase()
-      }
-    },
-    {
-      $lookup:{
-        from:"subscriptions",
-        localField:"_id",
-        foreignField:"channel",
-        as:"subscribers"
-      }
-    },
-    {
-      $lookup:{
-        from:"subscriptions",
-        localField:"_id",
-        foreignField:"subscriber",
-        as:"subscribedTo"
-      },
-    },
-    {
-    $addFields:{
-      subscribersCount:{
-        $size:"$subscribers"
-      }, 
-      channelsSubscribedToCount:{
-        $size:"$subscribedTo"
-      },
-      isSubscribed:{
-        $cond:{
-          if:{$in :[req.user?._id,"$subscribers.subscriber"]},
-          then:true,
-          else:false
-        }
-      }
+//   const channel=await  User.aggregate([
+//     {
+//       $match:{
+//         username:username?.toLowerCase()
+//       }
+//     },
+//     {
+//       $lookup:{
+//         from:"subscriptions",
+//         localField:"_id",
+//         foreignField:"channel",
+//         as:"subscribers"
+//       }
+//     },
+//     {
+//       $lookup:{
+//         from:"subscriptions",
+//         localField:"_id",
+//         foreignField:"subscriber",
+//         as:"subscribedTo"
+//       },
+//     },
+//     {
+//     $addFields:{
+//       subscribersCount:{
+//         $size:"$subscribers"
+//       }, 
+//       channelsSubscribedToCount:{
+//         $size:"$subscribedTo"
+//       },
+//       isSubscribed:{
+//         $cond:{
+//           if:{$in :[req.user?._id,"$subscribers.subscriber"]},
+//           then:true,
+//           else:false
+//         }
+//       }
 
 
-    }
-    },
-    {
-      $project:{
-        fullName: 1,
-        username: 1,
-        subscribersCount: 1,
-        channelSubscribedToCount: 1,
-        avatar: 1,
-        coverimage: 1,
-        email: 1,
-      }
-    }
+//     }
+//     },
+//     {
+//       $project:{
+//         fullName: 1,
+//         username: 1,
+//         subscribersCount: 1,
+//         channelSubscribedToCount: 1,
+//         avatar: 1,
+//         coverimage: 1,
+//         email: 1,
+//       }
+//     }
 
-  ])
+//   ])
 
-  if(!channel?.length){
-    throw new APIerror(404,"channel does not exist")
-  }
-  return res
-  .status(200)
-  .json(
-    new APIresponse(200,channel[0],"User channel fetched successfully")
-  )
-})
+//   if(!channel?.length){
+//     throw new APIerror(404,"channel does not exist")
+//   }
+//   return res
+//   .status(200)
+//   .json(
+//     new APIresponse(200,channel[0],"User channel fetched successfully")
+//   )
+// })
 
-const getWatchHistory=asyncHandler(async(req,res)=>{
-  const user=await User.aggregate([
-    {
-      $match:{
-        _id:new mongoose.Types.ObjectId(req.user._id)
-      }
-    },
+// const getWatchHistory=asyncHandler(async(req,res)=>{
+//   const user=await User.aggregate([
+//     {
+//       $match:{
+//         _id:new mongoose.Types.ObjectId(req.user._id)
+//       }
+//     },
 
-    {
-      $lookup:{
-        from:"videos",
-        localField:"watchHistory",
-        foreignField:"_id",
-        as:"watchHistory",
-        pipeline:[
-          {
-            $lookup:{
-              from:"users",
-              localField:"owner",
-              foreignField:"_id",
-              as:"owner",
-              pipeline:[
-                {
-                  $project:{
-                    fullname:1,
-                    username:1,
-                    avatar:1
+//     {
+//       $lookup:{
+//         from:"videos",
+//         localField:"watchHistory",
+//         foreignField:"_id",
+//         as:"watchHistory",
+//         pipeline:[
+//           {
+//             $lookup:{
+//               from:"users",
+//               localField:"owner",
+//               foreignField:"_id",
+//               as:"owner",
+//               pipeline:[
+//                 {
+//                   $project:{
+//                     fullname:1,
+//                     username:1,
+//                     avatar:1
                     
-                  }
-                }
-              ]
-            }
-          },
-          {
-            $addFields:{
-              owner:{
-                $first:"$owner"
-              }
-            }
-          }
+//                   }
+//                 }
+//               ]
+//             }
+//           },
+//           {
+//             $addFields:{
+//               owner:{
+//                 $first:"$owner"
+//               }
+//             }
+//           }
            
-        ]
-      }
-    }
+//         ]
+//       }
+//     }
 
-  ])
+//   ])
 
-  return res
-  .status(200)
-  .json(
-    new APIresponse(
-      200,
-      user[0].watchHistory,
-      "Watch history fetched successfully"
-    )
-  )
-})
+//   return res
+//   .status(200)
+//   .json(
+//     new APIresponse(
+//       200,
+//       user[0].watchHistory,
+//       "Watch history fetched successfully"
+//     )
+//   )
+// })
 
 
 
@@ -457,7 +469,5 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
-  getChannelUserProfile,
-  getWatchHistory,
 
 }

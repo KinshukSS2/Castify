@@ -7,7 +7,9 @@ const router = Router();
 
 // Public routes (no authentication required)
 router.get("/getAll-videos", getAllVideos);
-router.get("/getMyVideos", getMyVideos);
+
+// Protected routes (authentication required)
+router.get("/getMyVideos", verifyJWT, getMyVideos);
 
 // Public parameterized routes (must come after specific routes)
 router.get("/:id", getvideoById);
