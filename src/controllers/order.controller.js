@@ -12,61 +12,149 @@ const WAREHOUSE_LOCATION = {
   address: "Your Warehouse Address, New Delhi, India"
 };
 
-// Function to get coordinates from address using Google Geocoding API
+// Function to get coordinates from address using Google Maps Geocoding API
 const getCoordinatesFromAddress = async (address) => {
   try {
     const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        address
+      )}&key=${process.env.GOOGLE_MAPS_API_KEY}`
     );
-    
-    if (response.data.status === 'OK' && response.data.results.length > 0) {
+
+    if (response.data.status === "OK" && response.data.results.length > 0) {
       const location = response.data.results[0].geometry.location;
       return {
         lat: location.lat,
         lng: location.lng,
         formatted_address: response.data.results[0].formatted_address
       };
+    } else {
+      throw new Error("Could not geocode address");
     }
-    throw new Error('Address not found');
   } catch (error) {
-    console.error('Geocoding error:', error);
-    throw new Error('Failed to get coordinates from address');
+    console.error("Geocoding error:", error);
+    throw error;
   }
 };
 
-// Function to calculate distance and route using Google Distance Matrix API
-const calculateShippingDetails = async (destinationCoords) => {
+// Function to calculate distance and shipping cost using Google Maps Distance Matrix API
+const calculateShippingDetails = async (originLat, originLng, destLat, destLng) => {
   try {
     const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${WAREHOUSE_LOCATION.lat},${WAREHOUSE_LOCATION.lng}&destinations=${destinationCoords.lat},${destinationCoords.lng}&units=metric&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${process.env.GOOGLE_MAPS_API_KEY}`
     );
-    
-    if (response.data.status === 'OK' && response.data.rows[0].elements[0].status === 'OK') {
+
+    if (response.data.status === "OK" && response.data.rows[0].elements[0].status === "OK") {
       const element = response.data.rows[0].elements[0];
+      const distanceText = element.distance.text;
+      const distanceValue = element.distance.value; // in meters
+      const durationText = element.duration.text;
+      const durationValue = element.duration.value; // in seconds
+
+      // Convert distance to kilometers
+      const distanceKm = distanceValue / 1000;
+
       return {
-        distance: element.distance.text,
-        duration: element.duration.text,
-        distanceValue: element.distance.value, // in meters
-        durationValue: element.duration.value // in seconds
+        distance: {
+          text: distanceText,
+          value: distanceValue,
+          km: distanceKm
+        },
+        duration: {
+          text: durationText,
+          value: durationValue
+        }
       };
+    } else {
+      throw new Error("Could not calculate distance");
     }
-    throw new Error('Distance calculation failed');
   } catch (error) {
-    console.error('Distance calculation error:', error);
-    throw new Error('Failed to calculate shipping distance');
+    console.error("Distance calculation error:", error);
+    throw error;
   }
 };
 
 // Function to calculate shipping cost based on distance
-const calculateShippingCost = (distanceInMeters) => {
-  const distanceInKm = distanceInMeters / 1000;
-  
-  // Shipping cost logic (you can customize this)
-  if (distanceInKm <= 10) return 50; // Local delivery
-  if (distanceInKm <= 50) return 100; // City delivery
-  if (distanceInKm <= 200) return 200; // State delivery
-  if (distanceInKm <= 500) return 300; // Regional delivery
-  return 500; // National delivery
+const calculateShippingCost = (distanceKm) => {
+  let baseCost = 50; // Base shipping cost
+  let perKmCost = 2; // Cost per kilometer
+  let expeditedThreshold = 500; // Distance threshold for expedited shipping
+
+  if (distanceKm <= 50) {
+    // Local delivery
+    return { 
+      cost: baseCost, 
+      zone: "Local",
+      deliveryDays: 1
+    };
+  } else if (distanceKm <= 200) {
+    // Regional delivery
+    return { 
+      cost: baseCost + (distanceKm * perKmCost), 
+      zone: "Regional",
+      deliveryDays: 2
+    };
+  } else if (distanceKm <= expeditedThreshold) {
+    // National delivery
+    return { 
+      cost: baseCost + (distanceKm * perKmCost * 1.5), 
+      zone: "National",
+      deliveryDays: 3
+    };
+  } else {
+    // Long distance delivery
+    return { 
+      cost: baseCost + (distanceKm * perKmCost * 2), 
+      zone: "Long Distance",
+      deliveryDays: 5
+    };
+  }
+};
+
+// Test Google Maps API function
+export const testGoogleMapsAPI = async (req, res) => {
+  try {
+    // Test address
+    const testAddress = "India Gate, New Delhi, India";
+    
+    console.log("Testing Google Maps API...");
+    console.log("API Key:", process.env.GOOGLE_MAPS_API_KEY ? "Set" : "Not set");
+    
+    // Test geocoding
+    const coordinates = await getCoordinatesFromAddress(testAddress);
+    console.log("Geocoding result:", coordinates);
+    
+    // Test distance calculation
+    const shippingDetails = await calculateShippingDetails(
+      WAREHOUSE_LOCATION.lat,
+      WAREHOUSE_LOCATION.lng,
+      coordinates.lat,
+      coordinates.lng
+    );
+    console.log("Distance calculation result:", shippingDetails);
+    
+    // Calculate shipping cost
+    const shippingCost = calculateShippingCost(shippingDetails.distance.km);
+    console.log("Shipping cost calculation:", shippingCost);
+    
+    res.status(200).json({
+      success: true,
+      message: "Google Maps API test successful",
+      data: {
+        testAddress,
+        coordinates,
+        shippingDetails,
+        shippingCost
+      }
+    });
+  } catch (error) {
+    console.error("Google Maps API test failed:", error);
+    res.status(500).json({
+      success: false,
+      message: "Google Maps API test failed: " + error.message,
+      error: error.response?.data || error.message
+    });
+  }
 };
 
 // Function to calculate shipping cost based on pincode (without Google Maps)
@@ -250,43 +338,6 @@ export const getShippingEstimateGET = (req, res) => {
     shippingEstimate,
     message: "Sample shipping estimate (use POST with actual data)"
   });
-};
-
-// Test Google Maps API connectivity
-export const testGoogleMapsAPI = async (req, res) => {
-  try {
-    // Test with a simple address
-    const testAddress = "Mumbai, Maharashtra, India";
-    
-    const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(testAddress)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
-    );
-    
-    if (response.data.status === 'OK') {
-      res.status(200).json({
-        success: true,
-        message: "Google Maps API is working correctly!",
-        data: {
-          status: response.data.status,
-          location: response.data.results[0].geometry.location,
-          formatted_address: response.data.results[0].formatted_address
-        }
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "Google Maps API error",
-        error: response.data
-      });
-    }
-  } catch (error) {
-    console.error("Google Maps API test failed:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Google Maps API test failed",
-      error: error.message
-    });
-  }
 };
 
 // Simple test endpoint
@@ -663,3 +714,4 @@ export const trackOrderPublic = async (req, res) => {
     });
   }
 };
+
