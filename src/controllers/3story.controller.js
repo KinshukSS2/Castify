@@ -230,7 +230,7 @@ const getFullStoryTree = asyncHandler(async (req, res) => {
   );
 });
 
-//here story means the whole tree
+
 const deleteStory = asyncHandler(async (req, res) => {
   const { storyId } = req.params;
 
@@ -250,7 +250,7 @@ const deleteStory = asyncHandler(async (req, res) => {
   );
 });
 
-//here video means node of the story tree
+
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 

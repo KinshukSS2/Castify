@@ -42,11 +42,6 @@ const userSchema=new mongoose.Schema({
     required:true
   },
 
-  //  newsletterSubscribed: {
-  //   type: Boolean,
-  //   default: false,
-  // },
-
   phone:{
     type:String
   },

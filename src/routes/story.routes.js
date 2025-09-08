@@ -8,7 +8,7 @@ import {
   getFullStoryTree,
   deleteStory,
   deleteVideo
-} from "../controllers/story.controller.js";
+} from "../controllers/3story.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();

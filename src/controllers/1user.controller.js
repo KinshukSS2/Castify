@@ -131,7 +131,7 @@ return res
 
 const logoutUser=asyncHandler(async(req,res)=>{
   try {
-    // Check if user exists in request (from auth middleware)
+ 
     if (!req.user || !req.user._id) {
       throw new APIerror(401, "User not authenticated");
     }
@@ -140,7 +140,7 @@ const logoutUser=asyncHandler(async(req,res)=>{
       req.user._id,
       {
         $unset: {
-          refreshtoken: 1 // This removes the field from document
+          refreshtoken: 1 
         }
       },
       {

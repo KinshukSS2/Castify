@@ -8,8 +8,7 @@ import {
   getOrderById,
   updateOrderStatus,
   trackOrder,
-  trackOrderPublic,
-  testGoogleMapsAPI
+  trackOrderPublic
 } from "../controllers/order.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -17,9 +16,6 @@ const router = Router();
 
 // Test endpoint (GET)
 router.route("/test").get(testEndpoint);
-
-// Test Google Maps API endpoint
-router.route("/test-google-maps").get(testGoogleMapsAPI);
 
 // Get shipping estimate (GET - for browser testing)
 router.route("/shipping-estimate").get(getShippingEstimateGET);
