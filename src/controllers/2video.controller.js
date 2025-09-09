@@ -71,7 +71,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   
-  // Get user ID if authenticated (from optional auth middleware)
+  
   const userId = req.user?._id;
 
   console.log(` Fetching videos - Page: ${page}, Limit: ${limit}, User: ${userId || 'Anonymous'}`);
@@ -132,9 +132,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const getMyVideos = asyncHandler(async (req, res) => {
-  // Get videos uploaded by the current authenticated user
+ 
   const myVideos = await Video.find({ owner: req.user._id })
-    .sort({ createdAt: -1 })  // Latest first
+    .sort({ createdAt: -1 }) 
     .populate('owner', 'username avatar')
     .select('title description thumbnail videoFile duration createdAt views votes');
 
@@ -143,7 +143,7 @@ const getMyVideos = asyncHandler(async (req, res) => {
     .json(new APIresponse(200, { videos: myVideos }, "Fetched user's videos successfully"));
 });
 
-// Alternative endpoint for URL-based video publishing (for populator)
+
 const publishVideoFromUrl = asyncHandler(async (req, res) => {
   const { title, description, videoFile, thumbnail, duration } = req.body;
 
@@ -153,7 +153,7 @@ const publishVideoFromUrl = asyncHandler(async (req, res) => {
     throw new APIerror(400, "Title, description, and video URL are required");
   }
 
-  // Create video with direct URLs (for demo/populator content)
+ 
   const newVideo = await Video.create({
     videoFile: videoFile,
     title: title,
@@ -177,8 +177,8 @@ const publishVideoFromUrl = asyncHandler(async (req, res) => {
 
 const voteOnVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { voteType } = req.body; // 'upvote' or 'downvote'
-  const userId = req.user._id; // Get authenticated user ID
+  const { voteType } = req.body; 
+  const userId = req.user._id;
 
   if (!isValidObjectId(videoId)) {
     throw new APIerror(400, "Invalid video ID");
@@ -193,12 +193,12 @@ const voteOnVideo = asyncHandler(async (req, res) => {
     throw new APIerror(404, "Video not found");
   }
 
-  // Initialize voters array if it doesn't exist
+
   if (!video.voters) video.voters = [];
 
   const voteValue = voteType === 'upvote' ? 1 : -1;
   
-  // Check if user has already voted
+
   const existingVoteIndex = video.voters.findIndex(
     voter => voter.user.toString() === userId.toString()
   );
@@ -207,28 +207,28 @@ const voteOnVideo = asyncHandler(async (req, res) => {
     const existingVote = video.voters[existingVoteIndex];
     
     if (existingVote.value === voteValue) {
-      // Same vote - remove it (toggle off)
+   
       video.voters.splice(existingVoteIndex, 1);
       video.votes -= voteValue;
     } else {
-      // Different vote - update it
-      video.votes -= existingVote.value; // Remove old vote
-      existingVote.value = voteValue; // Update to new vote
-      video.votes += voteValue; // Add new vote
+     
+      video.votes -= existingVote.value; 
+      existingVote.value = voteValue;
+      video.votes += voteValue; 
     }
   } else {
-    // First vote from this user
+  
     video.voters.push({ user: userId, value: voteValue });
     video.votes += voteValue;
   }
 
   await video.save();
 
-  // Calculate upvotes and downvotes for response
+
   const upvotes = video.voters.filter(v => v.value === 1).length;
   const downvotes = video.voters.filter(v => v.value === -1).length;
   
-  // Get current user's vote state
+
   const userVote = video.voters.find(v => v.user.toString() === userId.toString());
   const userVoteState = userVote ? (userVote.value === 1 ? 'upvoted' : 'downvoted') : 'none';
 
@@ -237,7 +237,7 @@ const voteOnVideo = asyncHandler(async (req, res) => {
       upvotes,
       downvotes,
       totalVotes: video.votes,
-      userVoteState // Tell frontend what the user's current vote is
+      userVoteState 
     }, `Vote processed successfully`)
   );
 });
@@ -255,7 +255,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new APIerror(404, "Video not found");
   }
 
-  // Check if user owns the video
   if (!video.owner.equals(userId)) {
     throw new APIerror(403, "You can only delete your own videos");
   }

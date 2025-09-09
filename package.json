@@ -1,7 +1,7 @@
 {
-  "name": "chai_backend",
+  "name": "castify_backend",
   "version": "1.0.0",
-  "description": "end to end project for chai code",
+  "description": "end to end project for castify",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -14,6 +14,7 @@
     "prettier": "^3.6.2"
   },
   "dependencies": {
+    "@google-cloud/dialogflow": "^7.2.0",
     "axios": "^1.6.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",

@@ -26,10 +26,11 @@
   import videoRouter from './routes/video.routes.js';
   app.use("/api/v1/videos", videoRouter);
   
-  import storyRouter from './routes/story.routes.js';
-  app.use("/api/v1/stories", storyRouter);
+import storyRouter from './routes/story.routes.js';
+app.use("/api/v1/stories", storyRouter);
 
-  import orderRouter from './routes/order.routes.js';
-  app.use("/api/v1/orders", orderRouter);
+import orderRouter from './routes/order.routes.js';
+app.use("/api/v1/orders", orderRouter);
 
-  export{app}
+import dialogflowRouter from './routes/dialogflow.routes.js';
+app.use("/api/v1/dialogflow", dialogflowRouter);  export{app}
