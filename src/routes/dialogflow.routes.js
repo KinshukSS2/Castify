@@ -3,10 +3,8 @@ import { detectIntent, healthCheck } from "../controllers/dialogflow.controller.
 
 const router = Router();
 
-// Route for detecting intent from user messages
-router.route("/detect-intent").post(detectIntent);
 
-// Health check route
+router.route("/detect-intent").post(detectIntent);
 router.route("/health").get(healthCheck);
 
 export default router;

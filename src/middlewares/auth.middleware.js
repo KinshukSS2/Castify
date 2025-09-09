@@ -29,7 +29,7 @@
     }
   })
 
-  // Optional JWT verification - doesn't throw error if no token
+
   export const optionalJWT = asyncHandler(async (req, res, next) => {
     try {
       const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
@@ -43,10 +43,10 @@
         }
       }
       
-      // Always proceed to next middleware, whether authenticated or not
+
       next();
     } catch (error) {
-      // If token is invalid, just proceed without user (don't throw error)
+  
       console.log("Optional JWT verification failed:", error.message);
       next();
     }

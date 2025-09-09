@@ -3,7 +3,7 @@ import mongoose, {Schema} from "mongoose";
 const OrderSchema = new Schema({
   razorpayOrderId: {
     type: String,
-    required: false // Made optional since we removed Razorpay
+    required: false
   },
   amount: {
     type: Number,
@@ -36,18 +36,18 @@ const OrderSchema = new Schema({
     default: "pending"
   },
   
-  // Tracking information
+
   trackingNumber: {
     type: String,
     unique: true,
-    sparse: true // allows multiple null values
+    sparse: true
   },
-  
+
   notes: {
     type: String,
   },
   
-  // Status timestamps
+  
   shippedAt: {
     type: Date,
   },

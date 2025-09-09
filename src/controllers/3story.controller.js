@@ -261,7 +261,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new APIerror(403, "Not authorized to delete this video");
   }
 
-  // remove reference from parent
+  
   if (video.parentVideo) {
     await Video.findByIdAndUpdate(video.parentVideo, {
       $pull: { branches: video._id },
