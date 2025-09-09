@@ -70,8 +70,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
   
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
+  
+  // Get user ID if authenticated (from optional auth middleware)
+  const userId = req.user?._id;
 
-  console.log(` Fetching videos - Page: ${page}, Limit: ${limit}`);
+  console.log(` Fetching videos - Page: ${page}, Limit: ${limit}, User: ${userId || 'Anonymous'}`);
 
   const videos = await Video.find()
     .skip((page - 1) * limit)
@@ -85,15 +88,25 @@ const getAllVideos = asyncHandler(async (req, res) => {
     videoFile: videos[0].videoFile
   } : "No videos found");
 
-  // Calculate vote counts for each video
+  // Calculate vote counts and user vote state for each video
   const videosWithVotes = videos.map(video => {
     const upvotes = video.voters ? video.voters.filter(v => v.value === 1).length : 0;
     const downvotes = video.voters ? video.voters.filter(v => v.value === -1).length : 0;
     
+    // Check if current user has voted (only if authenticated)
+    let userVoteState = 'none';
+    if (userId && video.voters) {
+      const userVote = video.voters.find(v => v.user.toString() === userId.toString());
+      if (userVote) {
+        userVoteState = userVote.value === 1 ? 'upvoted' : 'downvoted';
+      }
+    }
+    
     return {
       ...video.toObject(),
       upvotes,
-      downvotes
+      downvotes,
+      userVoteState
     };
   });
 
@@ -165,6 +178,7 @@ const publishVideoFromUrl = asyncHandler(async (req, res) => {
 const voteOnVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { voteType } = req.body; // 'upvote' or 'downvote'
+  const userId = req.user._id; // Get authenticated user ID
 
   if (!isValidObjectId(videoId)) {
     throw new APIerror(400, "Invalid video ID");
@@ -182,28 +196,49 @@ const voteOnVideo = asyncHandler(async (req, res) => {
   // Initialize voters array if it doesn't exist
   if (!video.voters) video.voters = [];
 
-  // For demo/public app - just add the vote without user tracking
   const voteValue = voteType === 'upvote' ? 1 : -1;
   
-  // Add vote with a random identifier for demo purposes
-  const randomId = new mongoose.Types.ObjectId();
-  video.voters.push({ user: randomId, value: voteValue });
+  // Check if user has already voted
+  const existingVoteIndex = video.voters.findIndex(
+    voter => voter.user.toString() === userId.toString()
+  );
 
-  // Recalculate total votes
-  video.votes = video.voters.reduce((total, voter) => total + voter.value, 0);
+  if (existingVoteIndex !== -1) {
+    const existingVote = video.voters[existingVoteIndex];
+    
+    if (existingVote.value === voteValue) {
+      // Same vote - remove it (toggle off)
+      video.voters.splice(existingVoteIndex, 1);
+      video.votes -= voteValue;
+    } else {
+      // Different vote - update it
+      video.votes -= existingVote.value; // Remove old vote
+      existingVote.value = voteValue; // Update to new vote
+      video.votes += voteValue; // Add new vote
+    }
+  } else {
+    // First vote from this user
+    video.voters.push({ user: userId, value: voteValue });
+    video.votes += voteValue;
+  }
 
   await video.save();
 
   // Calculate upvotes and downvotes for response
   const upvotes = video.voters.filter(v => v.value === 1).length;
   const downvotes = video.voters.filter(v => v.value === -1).length;
+  
+  // Get current user's vote state
+  const userVote = video.voters.find(v => v.user.toString() === userId.toString());
+  const userVoteState = userVote ? (userVote.value === 1 ? 'upvoted' : 'downvoted') : 'none';
 
   return res.status(200).json(
     new APIresponse(200, {
       upvotes,
       downvotes,
-      totalVotes: video.votes
-    }, `Video ${voteType}d successfully`)
+      totalVotes: video.votes,
+      userVoteState // Tell frontend what the user's current vote is
+    }, `Vote processed successfully`)
   );
 });
 
