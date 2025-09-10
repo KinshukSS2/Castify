@@ -11,7 +11,7 @@ class DialogflowController {
     this.privateKey = process.env.DIALOGFLOW_PRIVATE_KEY;
     this.clientEmail = process.env.DIALOGFLOW_CLIENT_EMAIL;
     
-    // Fallback responses when Dialogflow is not configured
+   
     this.fallbackResponses = {
       "hello": "Hello! I'm your Castify assistant. How can I help you today?",
       "help": "I can help you with information about uploading videos, premium features, contact details, platform features, signing up, our mission, and navigation.",
@@ -23,7 +23,7 @@ class DialogflowController {
     };
   }
 
-  // Enhanced intent detection with multiple methods
+ 
   detectUserIntent(query) {
     const normalizedQuery = query.toLowerCase().trim();
     
@@ -59,7 +59,7 @@ class DialogflowController {
     };
   }
 
-  // Extract parameters from user query
+
   extractParameters(query, intent) {
     const parameters = {};
     
@@ -82,7 +82,7 @@ class DialogflowController {
     return parameters;
   }
 
-  // Generate smart responses based on intent and context
+
   generateSmartResponse(intent, parameters, query) {
     const responses = {
       'greeting': [
