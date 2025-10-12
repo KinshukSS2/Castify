@@ -295,27 +295,12 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 **Kinshuk Sanand**
 
 - GitHub: [@KinshukSS2](https://github.com/KinshukSS2)
-- Email: kinshuklit2005@gmail.com
+- Email: kinshuk380@gmail.com
 
-## 🙏 Acknowledgments
 
-- **Chai aur Code**: Inspiration and learning platform
-- **React Community**: Excellent documentation and support
-- **MongoDB**: Robust database solutions
-- **Cloudinary**: Reliable media management
-- **Express.js**: Flexible web framework
-
-## 📞 Support
-
-For support and questions:
-
-- 📧 Email: support@castify.com
-- 📱 Phone: +1 (555) 123-4567
-- 🌐 Website: [castify.com](https://castify.com)
-
----
 
 <div align="center">
   <p>Made with ❤️ by the Castify Team</p>
   <p>⭐ Star this repo if you find it helpful!</p>
 </div>
+
