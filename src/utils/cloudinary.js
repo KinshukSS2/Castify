@@ -11,20 +11,20 @@ const uploadOnCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
 
-    // Upload to a specific folder so you can find it easily
+    
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
-      folder: "uploads" // will appear in Media Library > uploads folder
+      folder: "uploads" 
     });
 
     console.log("✅ File uploaded successfully!");
     console.log("🌐 URL:", response.secure_url);
     console.log("🆔 Public ID:", response.public_id);
 
-    // Delete the local file after upload
+    
     fs.unlinkSync(localFilePath);
 
-    return response; // return for further use in routes
+    return response; 
   } catch (error) {
     if (fs.existsSync(localFilePath)) {
       fs.unlinkSync(localFilePath);
