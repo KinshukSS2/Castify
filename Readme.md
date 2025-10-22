@@ -292,7 +292,7 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Kinshuk Sanand**
+**Kinshuk S**
 
 - GitHub: [@KinshukSS2](https://github.com/KinshukSS2)
 - Email: kinshuk380@gmail.com
@@ -303,4 +303,5 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
   <p>Made with ❤️ by the Castify Team</p>
   <p>⭐ Star this repo if you find it helpful!</p>
 </div>
+
 
