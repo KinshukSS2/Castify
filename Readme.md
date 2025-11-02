@@ -299,9 +299,6 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 
 
 
-<div align="center">
-  <p>Made with ❤️ by the Castify Team</p>
-  <p>⭐ Star this repo if you find it helpful!</p>
-</div>
+
 
 
